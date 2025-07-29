@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanban Tracker</title>
+    <title>✨ AI-Powered Kanban Tracker</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -142,12 +142,22 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-kanban-app';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // =================================================================================
+        // PASTE YOUR FIREBASE CONFIGURATION OBJECT HERE
+        // =================================================================================
+        const firebaseConfig = {
+        apiKey: "AIzaSyA3O161vveeywbUNyR7AaHVJLVMFcOwTN0",
+        authDomain: "ai-kanban-app-e124b.firebaseapp.com",
+        projectId: "ai-kanban-app-e124b",
+        storageBucket: "ai-kanban-app-e124b.firebasestorage.app",
+        messagingSenderId: "882844511893",
+        appId: "1:882844511893:web:3df2dc4b5d0662812d759c",
+        measurementId: "G-X6HB25QJBK"
+        };
+        // =================================================================================
 
         let app, auth, db, userId;
         let isAuthReady = false;
@@ -168,6 +178,12 @@
 
         async function initialize() {
             try {
+                // Check if the firebaseConfig has been filled out
+                if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+                    showMessageModal("Configuration Needed", "Please paste your Firebase project configuration into the index.html file.");
+                    return;
+                }
+
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -188,15 +204,15 @@
                     if (user) {
                         userId = user.uid;
                         userIdSpan.textContent = userId;
-                        tasksCollectionRef = collection(db, `artifacts/${appId}/public/data/tasks`);
+                        // Using a simpler, top-level collection for the public app
+                        tasksCollectionRef = collection(db, `tasks`);
                         isAuthReady = true;
                         resolve(user);
                     } else {
                         try {
-                            if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                            else await signInAnonymously(auth);
+                           await signInAnonymously(auth);
                         } catch (error) {
-                            console.error("Authentication failed:", error);
+                            console.error("Anonymous sign-in failed:", error);
                             userIdSpan.textContent = 'Auth Failed';
                             resolve(null);
                         }
@@ -314,7 +330,7 @@
             const title = document.getElementById('taskTitle').value.trim();
             const description = document.getElementById('taskDesc').value.trim();
             if (!title) return;
-            const taskRef = doc(db, `artifacts/${appId}/public/data/tasks`, taskId);
+            const taskRef = doc(db, "tasks", taskId);
             try {
                 await updateDoc(taskRef, { title, description });
                 closeModal();
@@ -327,7 +343,7 @@
         async function handleDeleteTask() {
             const taskId = confirmDeleteBtn.dataset.taskId;
             if (!isAuthReady || !taskId) return;
-            const taskRef = doc(db, `artifacts/${appId}/public/data/tasks`, taskId);
+            const taskRef = doc(db, "tasks", taskId);
             try {
                 await deleteDoc(taskRef);
                 closeDeleteConfirmModal();
@@ -339,7 +355,7 @@
 
         async function updateTaskStatus(taskId, newStatus) {
             if (!isAuthReady) return;
-            const taskRef = doc(db, `artifacts/${appId}/public/data/tasks`, taskId);
+            const taskRef = doc(db, "tasks", taskId);
             try {
                 await updateDoc(taskRef, { status: newStatus });
                 if (newStatus === 'done') triggerConfetti();
@@ -439,7 +455,7 @@
         }
 
         async function callGeminiAPI(prompt) {
-            const apiKey = ""; // Leave empty
+            const apiKey = ""; // Leave empty, it's not needed for this model
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
             try {
